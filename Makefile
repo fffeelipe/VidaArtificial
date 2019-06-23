@@ -54,10 +54,12 @@ OBJECTS_DIR   = ./
 
 SOURCES       = LSystems.cpp \
 		fish.cpp \
-		main.cpp 
+		main.cpp \
+		shark.cpp 
 OBJECTS       = LSystems.o \
 		fish.o \
-		main.o
+		main.o \
+		shark.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
 		/usr/lib/qt/mkspecs/common/linux.conf \
@@ -280,9 +282,11 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
 		Proyecto_VidaArtificial.pro LSystems.h \
 		fish.h \
-		sandpile.h LSystems.cpp \
+		sandpile.h \
+		shark.h LSystems.cpp \
 		fish.cpp \
-		main.cpp
+		main.cpp \
+		shark.cpp
 QMAKE_TARGET  = Proyecto_VidaArtificial
 DESTDIR       = 
 TARGET        = Proyecto_VidaArtificial
@@ -783,13 +787,18 @@ compiler_clean:
 LSystems.o: LSystems.cpp LSystems.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o LSystems.o LSystems.cpp
 
-fish.o: fish.cpp fish.h
+fish.o: fish.cpp fish.h \
+		shark.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o fish.o fish.cpp
 
 main.o: main.cpp sandpile.h \
 		LSystems.h \
-		fish.h
+		fish.h \
+		shark.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
+
+shark.o: shark.cpp shark.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o shark.o shark.cpp
 
 ####### Install
 

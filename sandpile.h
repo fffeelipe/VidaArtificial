@@ -20,7 +20,7 @@ void addRandGrains(std::vector<std::vector<short> > &food, sf::RenderWindow &win
     while (c--){
         addgrain(food, rand()%food.size(), rand()%food[0].size());
     }
-    addgrain(food, 200, 200); //sandpile demostration
+    //addgrain(food, 700, 400); //sandpile demostration
     for(int i = 0; i<food.size(); i++){
         for(int j = 0; j<food[0].size(); j++){
             if(food[i][j]){
