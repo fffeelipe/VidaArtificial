@@ -1,0 +1,40 @@
+#include "fish.h"
+
+Fish::Fish(int x, int y, double rot, double speed, int vision, double minSize, double maxSize,
+           int maxEnergy, int liveExpectation, double reproductive_percentage):x(x), y(y), rot(rot),
+                speed(speed), vision(vision), minSize(minSize),maxSize(maxSize), maxEnergy(maxEnergy),
+                liveExpectation(liveExpectation), reproductive_percentage(reproductive_percentage),
+                id(rand()), male(rand()%2)
+    {
+    if (!texture.loadFromFile("fishfixed.png")){
+            std::cerr << "Error while loading texture" << std::endl;
+            return;
+    }
+    std::random_device rd;
+    std::mt19937 e2(rd());
+    std::normal_distribution<> dist(liveExpectation, liveExpectation*0.1);
+    
+    sprite.setTexture(texture);
+    sf::FloatRect spriteSize=sprite.getGlobalBounds();
+    sprite.setOrigin(spriteSize.width/2.,spriteSize.height/2.);
+
+}
+void Fish::move(sf::RenderWindow &window, int maxX, int maxY){
+    this->x = speed * cos(rot/180*(M_PI)) + x + maxX;
+    this->x%=maxX;
+    this->y = speed * sin(rot/180*(M_PI)) + y + maxY;
+    this->y%=maxY;
+    this->rot += (rand()%6)-3;
+    this->energy -= 1;
+    this->
+    //draw related stuff
+    sprite.setPosition(x,y);
+    sprite.setRotation(rot+180);
+    window.draw(sprite);
+}
+
+void run_fish(sf::RenderWindow &window, int maxX, int maxY, std::set<Fish*> fish){
+    for(auto &f : fish){
+        f->move(window, maxX, maxY);
+    }
+}

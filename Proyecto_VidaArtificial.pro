@@ -5,8 +5,8 @@ CONFIG -= qt
 
 SOURCES += \
         LSystems.cpp \
-        main.cpp \
-        sandpile.cpp
+        fish.cpp \
+        main.cpp
 LIBS += -lsfml-audio
 LIBS += -lsfml-graphics
 LIBS += -lsfml-network
@@ -14,4 +14,6 @@ LIBS += -lsfml-window
 LIBS += -lsfml-system
 
 HEADERS += \
-    LSystems.h
+    LSystems.h \
+    fish.h \
+    sandpile.h

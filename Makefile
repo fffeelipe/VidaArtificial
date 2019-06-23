@@ -53,8 +53,10 @@ OBJECTS_DIR   = ./
 ####### Files
 
 SOURCES       = LSystems.cpp \
+		fish.cpp \
 		main.cpp 
 OBJECTS       = LSystems.o \
+		fish.o \
 		main.o
 DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/common/unix.conf \
@@ -276,7 +278,10 @@ DIST          = /usr/lib/qt/mkspecs/features/spec_pre.prf \
 		/usr/lib/qt/mkspecs/features/exceptions.prf \
 		/usr/lib/qt/mkspecs/features/yacc.prf \
 		/usr/lib/qt/mkspecs/features/lex.prf \
-		Proyecto_VidaArtificial.pro LSystems.h LSystems.cpp \
+		Proyecto_VidaArtificial.pro LSystems.h \
+		fish.h \
+		sandpile.h LSystems.cpp \
+		fish.cpp \
 		main.cpp
 QMAKE_TARGET  = Proyecto_VidaArtificial
 DESTDIR       = 
@@ -778,8 +783,12 @@ compiler_clean:
 LSystems.o: LSystems.cpp LSystems.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o LSystems.o LSystems.cpp
 
-main.o: main.cpp sandpile.cpp \
-		LSystems.h
+fish.o: fish.cpp fish.h
+	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o fish.o fish.cpp
+
+main.o: main.cpp sandpile.h \
+		LSystems.h \
+		fish.h
 	$(CXX) -c $(CXXFLAGS) $(INCPATH) -o main.o main.cpp
 
 ####### Install
