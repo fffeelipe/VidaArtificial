@@ -4,7 +4,7 @@
 #include<LSystems.h>
 #include<fish.h>
 #include<shark.h>
-const int TREES = 0, FISH = 3, SHARKS = 1, ROCKS = 5, GRAINS = 1;
+const int TREES = 6, FISH = 10, SHARKS = 1, ROCKS = 5, GRAINS = 1;
 
 float rot = 0;
 sf::Sprite rock;
@@ -54,8 +54,9 @@ int main()
         rockspos.push_back({rand() % w , rand() % (h)});
 
     std::set<Fish*> fish;
+    sf::Color c1(255,0,2,255), c2(2,255,255,255);
     for(int i = 0; i<FISH; i++){
-        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 5, 300, 0.5, 1, 1000, 1000, 0.1  , 0.8, 0.5);
+        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 5, 300, 0.5, 1.1, 1000, 1000, 0.1, 0.8, 0.5,4,4,6,6,50,1.0, c1,c2);
         fish.insert(temp);
     }
     std::set<Shark*> sharks;
