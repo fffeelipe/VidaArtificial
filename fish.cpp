@@ -3,7 +3,7 @@ const bool MOVE = true;
 Fish::Fish(int x, int y, double rot, double speed, int vision, double minSize, double maxSize,
            int maxEnergy, int liveExpectation, double reproductive_percentage, double startLookingMate,
            double stopLookingMate, int innerRadiousX, int innerRadiousY, int outterRadiousX, int outterRadiousY,
-           int initialDensity, double ratio, sf::Color c1, sf::Color c2):
+           int initialDensity, double ratio, sf::Color c1, sf::Color c2, bool isShark):
     x(x), y(y), rot(rot),
     speed(speed), vision(vision),
     minSize(minSize),maxSize(maxSize),
@@ -20,13 +20,12 @@ Fish::Fish(int x, int y, double rot, double speed, int vision, double minSize, d
     ratio(ratio), currSize(minSize),
     c1(c1), c2(c2)
     {
-    if (!texture.loadFromFile("fishfixed.png")){
-            std::cerr << "Error while loading texture" << std::endl;
-            return;
-    }
-    if(rand()%100 < 5){
-        c1 = sf::Color(c1.r + (rand()%3)-1, c1.b + (rand()%3)-1, c1.g + (rand()%3)-1, c1.a);
-        c2 = sf::Color(c2.r + (rand()%3)-1, c2.b + (rand()%3)-1, c2.g + (rand()%3)-1, c2.a);
+    if(!isShark)setFishPNG();
+    else setSharkPNG();
+
+    if(rand()%100 < 33){
+        c1 = sf::Color(c1.r + (rand()%17)-8, c1.b + (rand()%17)-8, c1.g + (rand()%17)-8, c1.a);
+        c2 = sf::Color(c2.r + (rand()%17)-8, c2.b + (rand()%17)-8, c2.g + (rand()%17)-8, c2.a);
     }
     std::random_device rd;
     std::mt19937 e2(rd());
@@ -38,6 +37,20 @@ Fish::Fish(int x, int y, double rot, double speed, int vision, double minSize, d
     texture.update(pixels());
     sprite.setTexture(texture);
     }
+void Fish::setFishPNG(){
+    if (!texture.loadFromFile("fishfixed.png")){
+            std::cerr << "Error while loading texture" << std::endl;
+            return;
+    }
+}
+
+void Fish::setSharkPNG(){
+    if (!texture.loadFromFile("sharkfixed.png")){
+            std::cerr << "Error while loading texture" << std::endl;
+            return;
+    }
+}
+
 
 
 sf::Uint8* Fish::pixels(){
@@ -54,14 +67,7 @@ sf::Uint8* Fish::pixels(){
     bool temp[s.y][s.x];
     int repetitions = 20;
     while(repetitions--){
-        /*for(int yy = 0; yy< s.y; yy++){
-            for(int xx = 0; xx < s.x; xx++)
-                std::cerr<<turinmorph[yy][xx];
-            std::cerr<<'\n';
-        }
-        std::cerr<<"----------------------\n";
-        */
-        for(int yy = 0; yy< s.y; yy++){
+       for(int yy = 0; yy< s.y; yy++){
             for(int xx = 0; xx < s.x; xx++){
                 double p = 0;
                 //std::cerr<<"...."<<yy<<' '<<xx<<".....\n";
@@ -138,7 +144,7 @@ void Fish::sexualReproducction(Fish * f, std::set<Fish*> &fish){
                 (rand()%2 == 0?initialDensity:f->initialDensity)+(rand()%100 < 7? rand()%7-3:0)/10.0,
                 (rand()%2 == 0?ratio:f->ratio)+(rand()%100 < 7? rand()%7-3:0)/10.0,
                 (rand()%2 == 0?c1:f->c1),
-                (rand()%2 == 0?c2:f->c2)
+                (rand()%2 == 0?c2:f->c2), false
                 );
     fish.insert(temp);
 }
@@ -173,7 +179,7 @@ void Fish::move(sf::RenderWindow &window, int maxX, int maxY){
 
 }
 
-void Fish::feed(std::vector<std::vector<short> > &food){
+void Fish::fishFeed(std::vector<std::vector<short> > &food){
     int prevEnergy = energy;
     for(int i = std::max(0.0, y-(50*currSize)/2); i<std::min(food.size() +0.0,y+(50*currSize)/2);i++){
         for(int j = std::max(0.0, x-(50*currSize)/2); j<std::min(food[0].size() +0.0,x+(50*currSize)/2);j++){
@@ -193,7 +199,26 @@ void Fish::feed(std::vector<std::vector<short> > &food){
     if(energy > prevEnergy)
         currSize = std::min(maxSize, currSize + 0.01);
 }
-void Fish::searchFood(std::vector<std::vector<short> > &food){
+
+void Fish::sharkFeed(std::set<Fish*> &fish){
+    int prevEnergy = energy;
+    for(auto &f : fish){
+        if(abs(x-f->x)*abs(x-f->x) + abs(y-f->y)*abs(y-f->y) <=
+                texture.getSize().y*currSize*0.25*texture.getSize().y*currSize ){
+            energy = std::min(maxEnergy,f->energy*10 + energy);
+            currSize = std::min(maxSize, currSize + 0.05);
+            if(energy > maxEnergy * startLookingMate)
+                searchingMate = true;
+            fish.erase(f);
+            std::cerr<<"some shark killed a fish\n";
+            return;
+        }
+    }
+
+
+}
+
+void Fish::fishSearchFood(std::vector<std::vector<short> > &food){
     int mindis = 10000000;
     int maxfood = 2;
     for(int i = std::max(0, y-(vision)/2); i<std::min(int(food.size()),y+(vision)/2);i++){
@@ -206,6 +231,19 @@ void Fish::searchFood(std::vector<std::vector<short> > &food){
                 rot = (rot*5 + temrot)/6;
                 //std::cerr<<x-i<<' '<<j-y<<' '<<" <- distancias x,y \n";
             }
+        }
+    }
+}
+
+void Fish::sharkSearchFood(std::set<Fish*> &fish){
+    int mindis = 2000000000;
+    int dis;
+    for(auto &f : fish){
+        float temprot;
+        dis = distance(x, y, f->x, f->y, temprot);
+        if(dis <= vision*vision and dis< mindis){
+            mindis = f->energy;
+            rot = temprot;
         }
     }
 }
@@ -226,13 +264,12 @@ void Fish::searchMate(std::set<Fish*> &fish){
                 f->energy = f->maxEnergy*f->stopLookingMate;
                 f->searchingMate = false;
                 std::cout<<"added new fish\n";
-
             }
         }
     }
 }
 
-void Fish::avoid_obstacles(std::set<Shark*> &sharks, std::vector<std::pair<int,int> > &rockspos){
+void Fish::avoid_obstacles(std::set<Fish*> &sharks, std::vector<std::pair<int,int> > &rockspos){
     for(auto &r : rockspos){
         int dis = abs(x-r.first)*abs(x-r.first)+abs(y-r.second)*abs(y-r.second);
         if(dis < 1000){
@@ -240,25 +277,97 @@ void Fish::avoid_obstacles(std::set<Shark*> &sharks, std::vector<std::pair<int,i
             return;
         }
     }
+    for(auto &f : sharks){
+        if(abs(f->x-x) * abs(f->x-x) + abs(f->y-y) * abs(f->y-y) < vision*vision){
+            rot = 180 + customAtan2(f->y-y,f->x-x);
+        }
+    }
 }
 
 void run_fish(sf::RenderWindow &window, int maxX, int maxY, std::set<Fish*> &fish, std::vector<std::vector<short> > &food,
-              std::set<Shark*> shaks, std::vector<std::pair<int,int> > rockspos){
-    std::vector<Fish*> dead;
+              std::set<Fish*> &sharks, std::vector<std::pair<int,int> > rockspos){
+    std::vector<Fish*> deadFish, deadSharks;
     for(auto &f : fish){
-        f->searchFood(food);
-        f->avoid_obstacles(shaks, rockspos);
+        f->fishSearchFood(food);
+        f->avoid_obstacles(sharks, rockspos);
         if(f->searchingMate)
             f->searchMate(fish);
         f->move(window, maxX, maxY);
-        f->feed(food);
+        f->fishFeed(food);
         //std::cout<<f->energy <<"\n";
         if(f->life<0 or f->energy<0)
-            dead.push_back(f);
+            deadFish.push_back(f);
     }
-    for(auto &f : dead){
-        std::cout<<"the fuck? energy: "<<f->energy<<", life: "<<f->life<<"\n";
+    for(auto &f : sharks){
+        std::set<Fish*> fish_empty;
+        f->sharkSearchFood(fish);
+        f->avoid_obstacles(fish_empty, rockspos);
+        if(f->searchingMate)
+            f->searchMate(sharks);
+        f->move(window, maxX, maxY);
+        f->sharkFeed(fish);
+        //std::cout<<f->energy <<"\n";
+        if(f->life<0 or f->energy<0)
+            deadSharks.push_back(f);
+    }
+
+    for(auto &f : deadFish){
         fish.erase(f);
         delete f;
     }
+    for(auto &f : deadSharks){
+        std::cerr<<"is here?\n";
+        sharks.erase(f);
+        delete f;
+        std::cerr<<"nope\n";
+    }
+}
+
+int Fish::distance_basic(int x1,int y1,int x2,int y2){
+    return abs(x1-x2) * abs(x1-x2) + abs(y1-y2) * abs(y1-y2);
+}
+
+int Fish::distance(int x1,int y1,int x2,int y2, float &rot){
+    int dis = distance_basic(x1,y1,x2,y2);
+    rot = customAtan2(y2-y1,x2-x1);
+
+    if(distance_basic(x1,y1,x2+1366,y2+768) < dis){
+        dis = distance_basic(x1,y1,x2+1366,y2+768);
+        rot = customAtan2(y2+768-y1,x2+1366-x1);
+    }
+
+    if(distance_basic(x1,y1,x2+1366,y2) < dis){
+        dis = distance_basic(x1,y1,x2+1366,y2);
+        rot = customAtan2(y2-y1,x2+1366-x1);
+    }
+
+    if(distance_basic(x1,y1,x2,y2+768) < dis){
+        dis = distance_basic(x1,y1,x2,y2+768);
+        rot = customAtan2(y2+768-y1,x2-x1);
+    }
+
+    x2 -= 1366;
+    y2 -= 768;
+
+
+    if(distance_basic(x1,y1,x2,y2)< dis){
+        dis = distance_basic(x1,y1,x2,y2);
+            rot = customAtan2(y2-y1,x2-x1);
+    }
+    if(distance_basic(x1,y1,x2+1366,y2+768) < dis){
+        dis = distance_basic(x1,y1,x2+1366,y2+768);
+        rot = customAtan2(y2+768-y1,x2+1366-x1);
+    }
+
+    if(distance_basic(x1,y1,x2+1366,y2) < dis){
+        dis = distance_basic(x1,y1,x2+1366,y2);
+        rot = customAtan2(y2-y1,x2+1366-x1);
+    }
+
+    if(distance_basic(x1,y1,x2,y2+768) < dis){
+        dis = distance_basic(x1,y1,x2,y2+768);
+        rot = customAtan2(y2+768-y1,x2-x1);
+    }
+
+    return dis;
 }
