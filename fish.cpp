@@ -18,15 +18,17 @@ Fish::Fish(int x, int y, double rot, double speed, int vision, double minSize, d
     outterRadiousY(std::max(outterRadiousY, innerRadiousY + 1)),
     initialDensity(initialDensity),
     ratio(ratio), currSize(minSize),
-    c1(c1), c2(c2)
+    c1(c1), c2(c2), tagged(nullptr)
     {
     if(!isShark)setFishPNG();
     else setSharkPNG();
 
-    if(rand()%100 < 33){
-        c1 = sf::Color(c1.r + (rand()%17)-8, c1.b + (rand()%17)-8, c1.g + (rand()%17)-8, c1.a);
-        c2 = sf::Color(c2.r + (rand()%17)-8, c2.b + (rand()%17)-8, c2.g + (rand()%17)-8, c2.a);
-    }
+//    if(rand()%100 < 33){
+//        this->c2 = sf::Color(c2.r + (rand()%17)-8, c2.b + (rand()%17)-8, c2.g + (rand()%17)-8, c2.a);
+//    }
+//    if(rand()%100 < 33){
+//        this->c1 = sf::Color(c1.r + (rand()%17)-8, c1.b + (rand()%17)-8, c1.g + (rand()%17)-8, c1.a);
+//    }
     std::random_device rd;
     std::mt19937 e2(rd());
     std::normal_distribution<> dist(liveExpectation, liveExpectation*0.1);
@@ -126,6 +128,13 @@ sf::Uint8* Fish::pixels(){
 }
 
 void Fish::sexualReproducction(Fish * f, std::set<Fish*> &fish){
+    sf::Color c1 = (rand()%2 == 0?this->c1:f->c1), c2 = (rand()%2 == 0?this->c2:f->c2);
+    if(rand()%100 < 33){
+        this->c2 = sf::Color(c2.r + (rand()%17)-8, c2.b + (rand()%17)-8, c2.g + (rand()%17)-8, c2.a);
+    }
+    if(rand()%100 < 33){
+        this->c1 = sf::Color(c1.r + (rand()%17)-8, c1.b + (rand()%17)-8, c1.g + (rand()%17)-8, c1.a);
+    }
     Fish *temp = new Fish(
                 x,y,rand()%360,
                 (rand()%2 == 0?speed:f->speed)+(rand()%100 < 7? rand()%3-1:0),
@@ -143,8 +152,7 @@ void Fish::sexualReproducction(Fish * f, std::set<Fish*> &fish){
                 (rand()%2 == 0?outterRadiousY:f->outterRadiousY)+(rand()%100 < 5? rand()%3-1:0),
                 (rand()%2 == 0?initialDensity:f->initialDensity)+(rand()%100 < 7? rand()%7-3:0)/10.0,
                 (rand()%2 == 0?ratio:f->ratio)+(rand()%100 < 7? rand()%7-3:0)/10.0,
-                (rand()%2 == 0?c1:f->c1),
-                (rand()%2 == 0?c2:f->c2), false
+                (c1), (c2), false
                 );
     fish.insert(temp);
 }
@@ -185,12 +193,12 @@ void Fish::fishFeed(std::vector<std::vector<short> > &food){
         for(int j = std::max(0.0, x-(50*currSize)/2); j<std::min(food[0].size() +0.0,x+(50*currSize)/2);j++){
             if(energy > maxEnergy)
                 return;
-            energy += food[i][j]*food[i][j]*50;
+            energy += food[i][j]*food[i][j]*30;
             food[i][j] = 0;
             //std::cout<<"feeded\n";
         }
     }
-    if(energy > maxEnergy * startLookingMate and (1 - reproductive_percentage)*liveExpectation > life){
+    if(energy > maxEnergy * startLookingMate and (1 - reproductive_percentage)*liveExpectation < life){
         if(!searchingMate)std::cout<<"now reproductive\n";
         searchingMate = true;
     }
@@ -205,16 +213,19 @@ void Fish::sharkFeed(std::set<Fish*> &fish){
     for(auto &f : fish){
         if(abs(x-f->x)*abs(x-f->x) + abs(y-f->y)*abs(y-f->y) <=
                 texture.getSize().y*currSize*0.25*texture.getSize().y*currSize ){
-            energy = std::min(maxEnergy,f->energy*10 + energy);
+            energy = std::min(maxEnergy,f->energy*2 + energy);
             currSize = std::min(maxSize, currSize + 0.05);
-            if(energy > maxEnergy * startLookingMate)
+            if(energy > maxEnergy * startLookingMate and (1 - reproductive_percentage)*liveExpectation < life)
                 searchingMate = true;
             fish.erase(f);
             std::cerr<<"some shark killed a fish\n";
             return;
         }
     }
-
+    if(energy < maxEnergy * stopLookingMate)
+        searchingMate = false;
+    if(energy > prevEnergy)
+        currSize = std::min(maxSize, currSize + 0.01);
 
 }
 
@@ -237,13 +248,13 @@ void Fish::fishSearchFood(std::vector<std::vector<short> > &food){
 
 void Fish::sharkSearchFood(std::set<Fish*> &fish){
     int mindis = 2000000000;
-    int dis;
     for(auto &f : fish){
         float temprot;
-        dis = distance(x, y, f->x, f->y, temprot);
-        if(dis <= vision*vision and dis< mindis){
+        int dis = distance(x, y, f->x, f->y, temprot);
+        if(dis <= vision*vision and dis< mindis and (f->tagged == nullptr or f->tagged == this)){
             mindis = f->energy;
             rot = temprot;
+            f->tagged = this;
         }
     }
 }
@@ -251,10 +262,11 @@ void Fish::sharkSearchFood(std::set<Fish*> &fish){
 void Fish::searchMate(std::set<Fish*> &fish){
     int mindis = 1000000000;
     for(auto f : fish){
-        int dis = abs(x-f->x)*abs(x-f->x)+abs(y-f->y)*abs(y-f->y);
+        float temprot;
+        int dis = distance(x, y, f->x, f->y, temprot);
         if(f->searchingMate and male != f->male and dis <= vision*vision and dis < mindis ){
             mindis = dis;
-            rot = customAtan2(-y+f->y, -x+f->x);
+            rot = temprot;
             if(mindis < 250){
                 //Fish * newfish = new Fish(x,y,0,speed,vision,currSize,maxSize,maxEnergy,liveExpectation,reproductive_percentage,startLookingMate,stopLookingMate);
                 //fish.insert(newfish);
@@ -278,8 +290,10 @@ void Fish::avoid_obstacles(std::set<Fish*> &sharks, std::vector<std::pair<int,in
         }
     }
     for(auto &f : sharks){
-        if(abs(f->x-x) * abs(f->x-x) + abs(f->y-y) * abs(f->y-y) < vision*vision){
-            rot = 180 + customAtan2(f->y-y,f->x-x);
+        float temprot;
+        int dis = distance(x, y, f->x, f->y, temprot);
+        if(dis < vision*vision){
+            rot = temprot + 180;
         }
     }
 }
@@ -288,7 +302,7 @@ void run_fish(sf::RenderWindow &window, int maxX, int maxY, std::set<Fish*> &fis
               std::set<Fish*> &sharks, std::vector<std::pair<int,int> > rockspos){
     std::vector<Fish*> deadFish, deadSharks;
     for(auto &f : fish){
-        f->fishSearchFood(food);
+        //f->fishSearchFood(food);
         f->avoid_obstacles(sharks, rockspos);
         if(f->searchingMate)
             f->searchMate(fish);

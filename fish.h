@@ -18,6 +18,7 @@ public:
     sf::Sprite sprite;
     sf::Texture texture;
     sf::Color c1,c2;
+    Fish *tagged;
     Fish(int x, int y, double rot, double speed, int vision, double minSize, double maxSize,
          int maxEnergy, int liveExpectation, double reproductive_percentage, double startLookingMate,
          double stopLookingMate, int innerRadiousX, int innerRadiousY, int outterRadiousX, int outterRadiousY,

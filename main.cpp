@@ -3,7 +3,7 @@
 #include<sandpile.h>
 #include<LSystems.h>
 #include<fish.h>
-const int TREES = 6, FISH = 30, SHARKS = 5, ROCKS = 5, GRAINS = 10, INITIALGRAIN = 300;
+const int TREES = 5, FISH = 80, SHARKS = 6, ROCKS = 3, GRAINS = 10, INITIALGRAIN = 3000;
 
 float rot = 0;
 sf::Sprite rock;
@@ -53,14 +53,14 @@ int main()
         rockspos.push_back({rand() % w , rand() % (h)});
 
     std::set<Fish*> fish;
-    sf::Color c1(255,0,2,255), c2(2,255,255,255), c3(100,100,100,255), c4(200,200,200,255);
+    sf::Color c1(75,150,200,255), c2(200,150,75,255), c3(100,100,100,255), c4(200,200,200,255);
     for(int i = 0; i<FISH; i++){
-        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 5, 200, 0.5, 1.1, 1000, 600, 0.1, 0.8, 0.5,4,4,6,6,50,1.0, c1,c2,0);
+        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 4, 200, 0.3, 0.5, 1000, 600, 0.5, 0.8, 0.5,4,4,6,6,50,1.0, c1,c2,0);
         fish.insert(temp);
     }
     std::set<Fish*> sharks;
     for(int i = 0; i<SHARKS; i++){
-        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 8, 300, 0.3, 0.8, 400, 1800, 0.4, 0.8, 0.5,4,4,6,6,50,1.0, c3,c4,1);
+        Fish* temp =  new Fish(rand() % w, rand() % h, 0, 4.3, 220, 0.1, 0.3, 1400, 1800, 1.5, 0.8, 0.5,4,4,6,6,50,1.0, c3,c4,1);
         sharks.insert(temp);
     }
 
@@ -80,6 +80,7 @@ int main()
         run_fish(window, desktopMode.width, desktopMode.height, fish, food, sharks, rockspos);
 
         window.display();
+        std::cerr<<"sharks: "<<sharks.size()<<" fish: "<<fish.size()<<'\n';
     }
     return 0;
 }
